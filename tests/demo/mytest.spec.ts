@@ -70,4 +70,55 @@ test("Testing Login", async ({ page }) => {
 
     await expect(logsDropdown).toBeVisible({ timeout: 10000 });
   }).toPass();
+
+  // 11. captura de frame para el dropdown
+  const frame = await page.frame({ name: "genFrame" });
+
+  if (!frame) {
+    throw new Error("No se encontró el iframe #genFrame");
+  }
+
+  const logsDropdown = frame.locator('input[name="logs_files_combo"]');
+
+  await expect(logsDropdown).toBeVisible();
+
+  await logsDropdown.click();
+  await logsDropdown.fill("pci-expresso");
+  await logsDropdown.press("Enter");
+
+  // 12. Verificar toolbar del grid
+  const headerBar = frame.locator(".headerBar");
+
+  await expect(headerBar).toBeVisible({
+    timeout: 10000,
+  });
+
+  // 13. Validar headers principales
+  await expect(headerBar.getByText("Line")).toBeVisible();
+
+  await expect(headerBar.getByText("Message")).toBeVisible();
+
+  // 14. Buscar input de filtro Message
+  const messageFilter = frame.locator('input[name^="message$"]');
+
+  await expect(messageFilter).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Escribir filtro
+  await messageFilter.fill("error");
+
+  // Ejecutar búsqueda
+  await messageFilter.press("Enter");
+
+  // 15. Verificar botón Export Excel
+  const exportExcelButton = frame.locator('img[src*="page_excel.png"]');
+
+  // Esperar visible
+  await expect(exportExcelButton).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Click en el botón
+  await exportExcelButton.click();
 });
