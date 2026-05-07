@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { createFilteredCsv } from "../utils/csvHelper";
+import path from "path";
 
 test("Testing Login", async ({ page }) => {
   // 1. Ir a URL
@@ -21,33 +23,51 @@ test("Testing Login", async ({ page }) => {
   await expect(page).not.toHaveURL(/login/);
 
   // 7. Esperar app lista
-  const contextButton = page
-    .locator("button:has-text('Administration')")
-    .first();
-
-  await expect(contextButton).toBeVisible();
+  await page.waitForLoadState("networkidle");
 
   // 8. Contexto dinámico
-  const correctContext = page.getByRole("button", {
-    name: /System Administration/,
+  const contextContainer = page.locator(
+    ".ContextSelector-module__contextselector___1YiuW",
+  );
+
+  await expect(contextContainer).toBeVisible({
+    timeout: 15000,
   });
 
-  const isCorrectContext = await correctContext.isVisible();
+  const contextButton = contextContainer.locator("button.dropdown-toggle");
 
-  if (!isCorrectContext) {
-    const dropdownButton = page.locator("button.dropdown-toggle");
+  const selectedContext = contextButton.locator("span.filter-option");
 
-    if ((await dropdownButton.count()) > 0) {
-      await dropdownButton.click();
+  await expect(selectedContext).toBeVisible();
 
-      const option = page.getByText(/System Administration/);
-      await expect(option).toBeVisible();
-      await option.click();
-    }
+  const currentContext = (await selectedContext.textContent())?.trim() ?? "";
+
+  console.log("Contexto actual:", currentContext);
+
+  // Cambiar contexto si no contiene Administration
+  if (!currentContext.includes("Administration")) {
+    await contextButton.click();
+
+    const option = page
+      .locator(".dropdown-menu li a")
+      .filter({ hasText: /Administration/ })
+      .first();
+
+    await expect(option).toBeVisible({
+      timeout: 5000,
+    });
+
+    await option.click();
+
+    // Validar cambio
+    await expect(selectedContext).toContainText("Administration");
   }
 
   // 9. Monitoring
-  const monitoringLink = page.getByRole("link", { name: "Monitoring" });
+  const monitoringLink = page.getByRole("link", {
+    name: "Monitoring",
+  });
+
   await expect(monitoringLink).toBeVisible();
 
   await expect(async () => {
@@ -59,7 +79,9 @@ test("Testing Login", async ({ page }) => {
   }).toPass();
 
   // 10. Log Console
-  const logConsoleLink = page.getByRole("link", { name: "Log Console" });
+  const logConsoleLink = page.getByRole("link", {
+    name: "Log Console",
+  });
 
   await expect(async () => {
     await logConsoleLink.click();
@@ -68,15 +90,13 @@ test("Testing Login", async ({ page }) => {
 
     const logsDropdown = frame.locator('input[name="logs_files_combo"]');
 
-    await expect(logsDropdown).toBeVisible({ timeout: 10000 });
+    await expect(logsDropdown).toBeVisible({
+      timeout: 10000,
+    });
   }).toPass();
 
-  // 11. captura de frame para el dropdown
-  const frame = await page.frame({ name: "genFrame" });
-
-  if (!frame) {
-    throw new Error("No se encontró el iframe #genFrame");
-  }
+  // 11. Captura de frame para el dropdown
+  const frame = page.frameLocator("#genFrame");
 
   const logsDropdown = frame.locator('input[name="logs_files_combo"]');
 
@@ -98,20 +118,7 @@ test("Testing Login", async ({ page }) => {
 
   await expect(headerBar.getByText("Message")).toBeVisible();
 
-  // 14. Buscar input de filtro Message
-  const messageFilter = frame.locator('input[name^="message$"]');
-
-  await expect(messageFilter).toBeVisible({
-    timeout: 10000,
-  });
-
-  // Escribir filtro
-  await messageFilter.fill("error");
-
-  // Ejecutar búsqueda
-  await messageFilter.press("Enter");
-
-  // 15. Verificar botón Export Excel
+  // 14. Verificar botón Export Excel
   const exportExcelButton = frame.locator('img[src*="page_excel.png"]');
 
   const [download] = await Promise.all([
@@ -120,7 +127,22 @@ test("Testing Login", async ({ page }) => {
   ]);
 
   const filePath = `./downloads/pci-expresso/${await download.suggestedFilename()}`;
+
   await download.saveAs(filePath);
 
   console.log("Archivo descargado en:", filePath);
+
+  // 15. Filtrar CSV
+  const inputFile = filePath;
+
+  const outputFile = path.resolve(
+    "./downloads/pci-expresso",
+    "pci-expresso-filtered.csv",
+  );
+
+  const result = createFilteredCsv(inputFile, outputFile, "Message", "error");
+
+  console.log("CSV original:", result.totalOriginal);
+  console.log("CSV filtrado:", result.totalFiltered);
+  console.log("Archivo generado en:", result.outputFilePath);
 });
