@@ -114,11 +114,13 @@ test("Testing Login", async ({ page }) => {
   // 15. Verificar botón Export Excel
   const exportExcelButton = frame.locator('img[src*="page_excel.png"]');
 
-  // Esperar visible
-  await expect(exportExcelButton).toBeVisible({
-    timeout: 10000,
-  });
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    exportExcelButton.click(),
+  ]);
 
-  // Click en el botón
-  await exportExcelButton.click();
+  const filePath = `./downloads/pci-expresso/${await download.suggestedFilename()}`;
+  await download.saveAs(filePath);
+
+  console.log("Archivo descargado en:", filePath);
 });
