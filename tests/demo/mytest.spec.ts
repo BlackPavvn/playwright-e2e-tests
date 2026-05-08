@@ -115,7 +115,6 @@ test("Testing Login", async ({ page }) => {
 
   // 13. Validar headers principales
   await expect(headerBar.getByText("Line")).toBeVisible();
-
   await expect(headerBar.getByText("Message")).toBeVisible();
 
   // 14. Verificar botón Export Excel

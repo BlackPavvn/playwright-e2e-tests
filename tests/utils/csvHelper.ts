@@ -12,7 +12,6 @@ export function readCsv(filePath: string) {
   });
 }
 
-
 // Filtra registros por columna + keyword
 export function filterRecords(
   records: any[],
@@ -26,9 +25,7 @@ export function filterRecords(
   );
 }
 
-
 // Genera un nuevo CSV filtrado y lo guarda en disco
-
 export function createFilteredCsv(
   inputFilePath: string,
   outputFilePath: string,
