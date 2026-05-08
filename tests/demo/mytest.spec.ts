@@ -4,7 +4,7 @@ import path from "path";
 
 test("Testing Login", async ({ page }) => {
   // 1. Ir a URL
-  await page.goto("https://ogedev.powercosts.com/login/login.jsp");
+  await page.goto("url");
 
   // 2. Verificar título
   await expect(page).toHaveTitle("PCI Generation Supply Management System");
@@ -13,8 +13,8 @@ test("Testing Login", async ({ page }) => {
   await expect(page.locator(".title")).toHaveText("ENERGY PLATFORM");
 
   // 4. Credenciales
-  await page.getByLabel("Username").fill("emiranda");
-  await page.getByLabel("Password").fill("s7WLw8q4D3");
+  await page.getByLabel("Username").fill("emir");
+  await page.getByLabel("Password").fill("s7Wq4D3");
 
   // 5. Login
   await page.getByRole("button", { name: "Log In" }).click();
